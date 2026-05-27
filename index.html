@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄钟</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .timer-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto 30px;
+        }
+
+        .timer-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .timer-progress {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            border-radius: 50%;
+        }
+
+        .timer-progress svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .timer-progress circle {
+            fill: none;
+            stroke-width: 8;
+            stroke-linecap: round;
+        }
+
+        .progress-bg {
+            stroke: rgba(255, 255, 255, 0.2);
+        }
+
+        .progress-bar {
+            stroke: #fff;
+            transition: stroke-dashoffset 1s linear;
+        }
+
+        .timer-display {
+            position: relative;
+            z-index: 1;
+        }
+
+        .time {
+            font-size: 4em;
+            font-weight: 300;
+            letter-spacing: 5px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timer-label {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .mode-btn {
+            padding: 10px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: transparent;
+            color: #fff;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .mode-btn.active {
+            background: #fff;
+            color: #667eea;
+            border-color: #fff;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-start {
+            background: #fff;
+            color: #667eea;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-pause {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .btn-pause:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-reset {
+            background: transparent;
+            color: #fff;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-reset:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: 600;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: #fff;
+            color: #667eea;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .timer-container {
+                width: 220px;
+                height: 220px;
+            }
+
+            .time {
+                font-size: 3em;
+            }
+
+            .mode-selector {
+                flex-wrap: wrap;
+            }
+
+            .mode-btn {
+                padding: 8px 16px;
+                font-size: 0.9em;
+            }
+
+            .controls {
+                flex-wrap: wrap;
+            }
+
+            .btn {
+                padding: 12px 24px;
+                font-size: 1em;
+            }
+
+            .stats {
+                gap: 20px;
+            }
+
+            .stat-value {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍅 番茄钟</h1>
+        <p class="subtitle">专注工作，高效休息</p>
+
+        <div class="timer-container">
+            <div class="timer-circle">
+                <div class="timer-progress">
+                    <svg viewBox="0 0 270 270">
+                        <circle class="progress-bg" cx="135" cy="135" r="130"></circle>
+                        <circle class="progress-bar" cx="135" cy="135" r="130"
+                                stroke-dasharray="816.81"
+                                stroke-dashoffset="0"></circle>
+                    </svg>
+                </div>
+                <div class="timer-display">
+                    <div class="time">25:00</div>
+                    <div class="timer-label">专注时间</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="pomodoro">专注 25分钟</button>
+            <button class="mode-btn" data-mode="shortBreak">短休息 5分钟</button>
+            <button class="mode-btn" data-mode="longBreak">长休息 15分钟</button>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-start" id="startBtn">
+                <span>▶</span> 开始
+            </button>
+            <button class="btn btn-pause" id="pauseBtn" style="display: none;">
+                <span>⏸</span> 暂停
+            </button>
+            <button class="btn btn-reset" id="resetBtn">
+                <span>↺</span> 重置
+            </button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="pomodoroCount">0</div>
+                <div class="stat-label">完成番茄</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalTime">0</div>
+                <div class="stat-label">专注分钟</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <audio id="alarmSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        class PomodoroTimer {
+            constructor() {
+                this.modes = {
+                    pomodoro: { duration: 25 * 60, label: '专注时间' },
+                    shortBreak: { duration: 5 * 60, label: '短休息' },
+                    longBreak: { duration: 15 * 60, label: '长休息' }
+                };
+
+                this.currentMode = 'pomodoro';
+                this.timeRemaining = this.modes.pomodoro.duration;
+                this.isRunning = false;
+                this.interval = null;
+                this.pomodoroCount = 0;
+                this.totalFocusTime = 0;
+                this.completedPomodoros = 0;
+
+                this.initializeElements();
+                this.bindEvents();
+                this.updateDisplay();
+                this.updateProgress();
+            }
+
+            initializeElements() {
+                this.timeDisplay = document.querySelector('.time');
+                this.timerLabel = document.querySelector('.timer-label');
+                this.progressBar = document.querySelector('.progress-bar');
+                this.startBtn = document.getElementById('startBtn');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.pomodoroCountDisplay = document.getElementById('pomodoroCount');
+                this.totalTimeDisplay = document.getElementById('totalTime');
+                this.notification = document.getElementById('notification');
+                this.alarmSound = document.getElementById('alarmSound');
+                this.modeBtns = document.querySelectorAll('.mode-btn');
+            }
+
+            bindEvents() {
+                this.startBtn.addEventListener('click', () => this.start());
+                this.pauseBtn.addEventListener('click', () => this.pause());
+                this.resetBtn.addEventListener('click', () => this.reset());
+
+                this.modeBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        this.modeBtns.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        this.setMode(btn.dataset.mode);
+                    });
+                });
+            }
+
+            setMode(mode) {
+                if (this.isRunning) {
+                    this.pause();
+                }
+                this.currentMode = mode;
+                this.timeRemaining = this.modes[mode].duration;
+                this.updateDisplay();
+                this.updateProgress();
+                this.timerLabel.textContent = this.modes[mode].label;
+            }
+
+            start() {
+                if (this.isRunning) return;
+
+                this.isRunning = true;
+                this.startBtn.style.display = 'none';
+                this.pauseBtn.style.display = 'flex';
+
+                this.interval = setInterval(() => {
+                    this.timeRemaining--;
+                    this.updateDisplay();
+                    this.updateProgress();
+
+                    if (this.currentMode === 'pomodoro') {
+                        this.totalFocusTime = Math.floor((this.modes.pomodoro.duration - this.timeRemaining) / 60) +
+                            (this.completedPomodoros * 25);
+                        this.totalTimeDisplay.textContent = this.totalFocusTime;
+                    }
+
+                    if (this.timeRemaining <= 0) {
+                        this.complete();
+                    }
+                }, 1000);
+            }
+
+            pause() {
+                this.isRunning = false;
+                clearInterval(this.interval);
+                this.startBtn.style.display = 'flex';
+                this.pauseBtn.style.display = 'none';
+            }
+
+            reset() {
+                this.pause();
+                this.timeRemaining = this.modes[this.currentMode].duration;
+                this.updateDisplay();
+                this.updateProgress();
+            }
+
+            complete() {
+                this.pause();
+                this.playAlarm();
+
+                if (this.currentMode === 'pomodoro') {
+                    this.completedPomodoros++;
+                    this.pomodoroCount = this.completedPomodoros;
+                    this.pomodoroCountDisplay.textContent = this.pomodoroCount;
+
+                    this.showNotification('🍅 番茄完成！休息一下吧');
+
+                    if (this.completedPomodoros % 4 === 0) {
+                        this.setMode('longBreak');
+                        this.showNotification('🎉 太棒了！完成4个番茄，来个长休息');
+                    } else {
+                        this.setMode('shortBreak');
+                    }
+                } else {
+                    this.showNotification('⏰ 休息结束，继续加油！');
+                    this.setMode('pomodoro');
+                }
+            }
+
+            updateDisplay() {
+                const minutes = Math.floor(this.timeRemaining / 60);
+                const seconds = this.timeRemaining % 60;
+                this.timeDisplay.textContent =
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            updateProgress() {
+                const totalDuration = this.modes[this.currentMode].duration;
+                const progress = (totalDuration - this.timeRemaining) / totalDuration;
+                const circumference = 2 * Math.PI * 130;
+                const offset = circumference * (1 - progress);
+                this.progressBar.style.strokeDasharray = circumference;
+                this.progressBar.style.strokeDashoffset = offset;
+            }
+
+            playAlarm() {
+                this.alarmSound.currentTime = 0;
+                this.alarmSound.play().catch(e => console.log('音频播放失败:', e));
+            }
+
+            showNotification(message) {
+                this.notification.textContent = message;
+                this.notification.classList.add('show');
+                setTimeout(() => {
+                    this.notification.classList.remove('show');
+                }, 3000);
+            }
+        }
+
+        const timer = new PomodoroTimer();
+    </script>
+</body>
+</html>
